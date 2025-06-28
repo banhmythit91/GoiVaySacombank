@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Infographic: Gói Ưu Đãi Siêu Hấp Dẫn Dành Cho Người Trẻ Cùng Sacombank</title>
+    
+    <!-- NEW: Open Graph / Facebook Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://your-github-username.github.io/your-repo-name/">
+    <meta property="og:title" content="Gói Ưu Đãi Mua Nhà Siêu Hấp Dẫn Dành Cho Người Trẻ | Sacombank">
+    <meta property="og:description" content="Khám phá các gói vay ưu đãi Z HOME và PRIME HOME với lãi suất hấp dẫn, thủ tục đơn giản và công cụ tư vấn AI thông minh.">
+    <meta property="og:image" content="https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2">
+
+    <!-- NEW: Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://your-github-username.github.io/your-repo-name/">
+    <meta name="twitter:title" content="Gói Ưu Đãi Mua Nhà Siêu Hấp Dẫn Dành Cho Người Trẻ | Sacombank">
+    <meta name="twitter:description" content="Khám phá các gói vay ưu đãi Z HOME và PRIME HOME với lãi suất hấp dẫn, thủ tục đơn giản và công cụ tư vấn AI thông minh.">
+    <meta name="twitter:image" content="https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -122,11 +137,11 @@
         #ai-advisor-section {
             background: linear-gradient(135deg, #00529b, #0072ce);
         }
-        #ai-result h2 { font-size: 1.25rem; color: #00447c; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem;}
-        #ai-result h3 { font-size: 1.1rem; color: #1e3a8a; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem;}
-        #ai-result p { margin-bottom: 0.5rem; }
-        #ai-result ul { list-style-position: inside; margin-left: 1rem; margin-bottom: 1rem; }
-        #ai-result li { margin-bottom: 0.25rem; }
+        #ai-result h2, #financial-check-result h2 { font-size: 1.25rem; color: #00447c; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem;}
+        #ai-result h3, #financial-check-result h3 { font-size: 1.1rem; color: #1e3a8a; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem;}
+        #ai-result p, #financial-check-result p { margin-bottom: 0.5rem; }
+        #ai-result ul, #financial-check-result ul { list-style-position: inside; margin-left: 1rem; margin-bottom: 1rem; }
+        #ai-result li, #financial-check-result li { margin-bottom: 0.25rem; }
         #ai-result table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         #ai-result th, #ai-result td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         #ai-result th { background-color: #f2f2f2; }
@@ -231,6 +246,14 @@
         <div id="ai-result-container" class="hidden mt-8 bg-white rounded-2xl p-8 md:p-10 shadow-lg border border-slate-200">
              <h2 class="section-title !text-2xl !mb-6">Kết quả tư vấn từ AI</h2>
              <div id="ai-result" class="prose max-w-none"></div>
+             <!-- NEW: Financial Health Check Section -->
+             <div id="financial-health-check-section" class="hidden mt-6 pt-6 border-t border-slate-200">
+                <button id="financial-check-btn" class="w-full bg-green-100 text-green-800 font-bold py-4 px-6 rounded-lg text-lg hover:bg-green-200 transition-all duration-300 flex items-center justify-center gap-2">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    Phân tích sâu hơn & nhận mẹo tiết kiệm
+                </button>
+                <div id="financial-check-result" class="prose max-w-none mt-4"></div>
+             </div>
         </div>
         
         <!-- Registration Form Section -->
@@ -314,7 +337,13 @@
         const errorMessage = document.getElementById('error-message');
         const closeModalBtn = document.getElementById('close-modal-btn');
         const closeSuccessModalBtn = document.getElementById('close-success-modal-btn');
+        // NEW: Elements for the new feature
+        const financialHealthCheckSection = document.getElementById('financial-health-check-section');
+        const financialCheckBtn = document.getElementById('financial-check-btn');
+        const financialCheckResultDiv = document.getElementById('financial-check-result');
 
+        // Store user data for the second API call
+        let currentUserData = {};
 
         const showModal = (type, message = '') => {
             modal.classList.remove('hidden');
@@ -337,7 +366,6 @@
 
         getAdviceBtn.addEventListener('click', async () => {
             const age = document.getElementById('age').value;
-            // Unformat the numbers before sending to the API
             const income = document.getElementById('income').value.replace(/\./g, '');
             const loanAmount = document.getElementById('loanAmount').value.replace(/\./g, '');
             const loanTerm = document.getElementById('loanTerm').value;
@@ -348,22 +376,22 @@
             }
             showModal('loading');
 
-            // **UPDATED: The API URL now points to your Vercel proxy**
-            // **ACTION REQUIRED: Replace this with your actual Vercel app URL**
-            const apiUrl = 'https://sacombank-ai-proxy.vercel.app/api/get-advice';
-            
-            const payload = {
+            // Store data for the next call
+            currentUserData = {
                 age: parseInt(age),
                 income: parseInt(income),
                 loanAmount: parseInt(loanAmount),
-                loanTerm: parseInt(loanTerm)
+                loanTerm: parseInt(loanTerm),
+                request_type: 'initial_advice' // Specify request type
             };
 
+            const apiUrl = 'https://sacombank-ai-proxy.vercel.app/api/get-advice';
+            
             try {
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(currentUserData)
                 });
 
                 if (!response.ok) {
@@ -379,6 +407,8 @@
                     const text = result.candidates[0].content.parts[0].text;
                     aiResultDiv.innerHTML = marked.parse(text);
                     aiResultContainer.classList.remove('hidden');
+                    financialHealthCheckSection.classList.remove('hidden'); // Show the new button
+                    financialCheckResultDiv.innerHTML = ''; // Clear previous results
                     aiResultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
                    throw new Error('Không nhận được phản hồi hợp lệ từ AI.');
@@ -388,6 +418,45 @@
                 showModal('error', `Đã có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại sau. (Lỗi: ${error.message})`);
             } finally {
                 hideModal();
+            }
+        });
+
+        // NEW: Event listener for the financial health check button
+        financialCheckBtn.addEventListener('click', async () => {
+            financialCheckResultDiv.innerHTML = `<div class="flex justify-center items-center"><div class="loader"></div></div>`;
+            
+            const payload = {
+                ...currentUserData,
+                request_type: 'financial_check' // Specify the new request type
+            };
+            
+            const apiUrl = 'https://sacombank-ai-proxy.vercel.app/api/get-advice';
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    financialCheckResultDiv.innerHTML = marked.parse(text);
+                } else {
+                    throw new Error('Không nhận được phản hồi hợp lệ từ AI.');
+                }
+
+            } catch (error) {
+                 financialCheckResultDiv.innerHTML = `<p class="text-red-500">Đã có lỗi xảy ra: ${error.message}</p>`;
             }
         });
 
